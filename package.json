@@ -15,6 +15,7 @@
   "type": "commonjs",
   "dependencies": {
     "@aws-sdk/client-cloudwatch": "^3.986.0",
+    "@aws-sdk/client-cloudwatch-logs": "^3.986.0",
     "@aws-sdk/client-ec2": "^3.986.0",
     "@modelcontextprotocol/sdk": "^1.26.0",
     "dotenv": "^17.2.4",

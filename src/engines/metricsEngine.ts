@@ -1,6 +1,15 @@
-import { getInstanceMetrics } from "../aws/cloudwatchService";
+import { getInstanceMetrics } from "../aws/cloudwatchService.js";
+import { Datapoint } from "@aws-sdk/client-cloudwatch";
 
-function avg(datapoints: any[]) {
+export interface MetricsSummary {
+  instanceId: string;
+  cpuAvg: number;
+  netInAvg: number;
+  netOutAvg: number;
+  insights: string[];
+}
+
+function avg(datapoints: Datapoint[]): number {
   if (!datapoints.length) return 0;
 
   const sum = datapoints.reduce(
@@ -11,7 +20,7 @@ function avg(datapoints: any[]) {
   return sum / datapoints.length;
 }
 
-function generateInsights(cpuAvg: number) {
+function generateInsights(cpuAvg: number): string[] {
   const insights: string[] = [];
 
   if (cpuAvg > 80)
@@ -26,7 +35,7 @@ function generateInsights(cpuAvg: number) {
 export async function getMetricsSummary(
   instanceId: string,
   durationMinutes: number
-) {
+): Promise<MetricsSummary> {
   const metrics = await getInstanceMetrics(
     instanceId,
     durationMinutes
@@ -40,9 +49,9 @@ export async function getMetricsSummary(
 
   return {
     instanceId,
-    cpuAvg,
-    netInAvg,
-    netOutAvg,
+    cpuAvg: Math.round(cpuAvg * 100) / 100,
+    netInAvg: Math.round(netInAvg * 100) / 100,
+    netOutAvg: Math.round(netOutAvg * 100) / 100,
     insights
   };
 }
