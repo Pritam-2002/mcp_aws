@@ -4,7 +4,15 @@ import {
   Datapoint
 } from "@aws-sdk/client-cloudwatch";
 
-const cloudwatch = new CloudWatchClient({});
+import { config } from "../config/env.js";
+
+const cloudwatch = new CloudWatchClient({
+  region: config.AWS_REGION,
+  credentials: {
+    accessKeyId: config.AWS_ACCESS_KEY_ID,
+    secretAccessKey: config.AWS_SECRET_ACCESS_KEY
+  }
+});
 
 export interface MetricsData {
   cpu: Datapoint[];

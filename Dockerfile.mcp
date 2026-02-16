@@ -1,0 +1,67 @@
+# -----------------------------------------------------------------------------
+# Dockerfile.mcp - Production Build for Archestra (MCP Stdio Server)
+# -----------------------------------------------------------------------------
+# Optimized for:
+# - Small image size (Alpine Linux + Multi-stage build)
+# - Security (Non-root user, clean dependencies)
+# - Archestra Compatibility (Stdio only, no HTTP, Node 20)
+# -----------------------------------------------------------------------------
+
+# =============================================================================
+# Stage 1: Builder
+# =============================================================================
+FROM node:20-alpine AS builder
+
+# Set working directory for build context
+WORKDIR /app
+
+# Copy dependency interactions first (caching layer)
+# We assume the build context is the project root, so we copy from backend/
+COPY backend/package.json backend/package-lock.json ./
+COPY backend/tsconfig.json ./
+
+# Install ALL dependencies (including devDependencies for 'tsc')
+# prompt confirms 'ci' is preferred for reproducibility
+RUN npm ci
+
+# Copy source code
+COPY backend/src ./src
+
+# Compile TypeScript to JavaScript
+# Output directory: /app/dist
+RUN npm run build
+
+# =============================================================================
+# Stage 2: Production
+# =============================================================================
+FROM node:20-alpine AS production
+
+# Enforce secure production settings
+ENV NODE_ENV=production
+
+# Create app directory
+WORKDIR /app
+
+# Copy package definitions again for production install
+COPY backend/package.json backend/package-lock.json ./
+
+# Install ONLY production dependencies
+# This keeps the image small and secure
+RUN npm ci --omit=dev && npm cache clean --force
+
+# Copy compiled artifacts from builder stage
+COPY --from=builder /app/dist ./dist
+
+# Create a non-root user for security
+RUN addgroup -S mcp && adduser -S mcp -G mcp
+USER mcp
+
+# -----------------------------------------------------------------------------
+# Entry Point
+# -----------------------------------------------------------------------------
+# Archestra communicates via Stdio.
+# 1. No HTTP server is started.
+# 2. JSON-RPC messages are read/written to Stdin/Stdout.
+# 3. Logs MUST go to Stderr (handled by app logger).
+# -----------------------------------------------------------------------------
+CMD ["node", "dist/mcp/stdioServer.js"]

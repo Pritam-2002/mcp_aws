@@ -4,16 +4,15 @@ import {
   DescribeLogGroupsCommand
 } from "@aws-sdk/client-cloudwatch-logs";
 
-// Safe region access
-const AWS_REGION = (() => {
-  try {
-    return process.env.AWS_REGION || "us-east-1";
-  } catch {
-    return "us-east-1";
-  }
-})();
+import { config } from "../config/env.js";
 
-const logsClient = new CloudWatchLogsClient({ region: AWS_REGION });
+const logsClient = new CloudWatchLogsClient({
+  region: config.AWS_REGION,
+  credentials: {
+    accessKeyId: config.AWS_ACCESS_KEY_ID,
+    secretAccessKey: config.AWS_SECRET_ACCESS_KEY
+  }
+});
 
 export interface LogEvent {
   timestamp: number;

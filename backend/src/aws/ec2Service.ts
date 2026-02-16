@@ -1,6 +1,13 @@
 import { EC2Client, DescribeInstancesCommand } from "@aws-sdk/client-ec2";
+import { config } from "../config/env.js";
 
-const ec2 = new EC2Client({});
+const ec2 = new EC2Client({
+  region: config.AWS_REGION,
+  credentials: {
+    accessKeyId: config.AWS_ACCESS_KEY_ID,
+    secretAccessKey: config.AWS_SECRET_ACCESS_KEY
+  }
+});
 
 export interface EC2Instance {
   instanceId: string;
